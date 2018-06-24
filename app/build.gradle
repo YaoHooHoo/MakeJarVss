@@ -1,0 +1,65 @@
+apply plugin: 'com.android.application'
+
+def releaseTime() {
+    return new Date().format("yyyy-MM-dd", TimeZone.getTimeZone("UTC"))
+}
+
+android {
+    signingConfigs {
+        release {
+            keyAlias 'key'
+            keyPassword 'password'
+            storeFile file('F:/AndroidStudioProjectsOit/fc/code/android/VehicleManagement/keystore.jks')
+            storePassword 'password'
+        }
+    }
+    compileSdkVersion 23
+    defaultConfig {
+        applicationId "com.oit.makejar"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+    buildTypes {
+        release {
+            //混淆
+            minifyEnabled false
+            // Zipalign优化
+            zipAlignEnabled false
+            // 移除无用的resource文件
+            shrinkResources false
+            //前一部分代表系统默认的android程序的混淆文件，该文件已经包含了基本的混淆声明，后一个文件是自己的定义混淆文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            android.applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "makejar-v${defaultConfig.versionName}-${releaseTime()}.apk"
+                }
+            }
+            signingConfig signingConfigs.release
+        }
+    }
+
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+            jni.srcDirs = []//disable automatic ndk-build
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:23.4.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    configurations.all {
+        resolutionStrategy.force "com.android.support:support-annotations:25.4.0"
+    }
+    implementation files('libs/ScreenShotSDK_V1.0.jar')
+}
