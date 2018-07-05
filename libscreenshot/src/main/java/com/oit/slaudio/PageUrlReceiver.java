@@ -21,7 +21,7 @@ public class PageUrlReceiver extends BroadcastReceiver {
 
         boolean isWhite = AudioWhiteList.getInstance().isWhiteUrl(pageUrl);
         LogToFile.e("PageUrlReceiver-boolean", String.valueOf(isWhite));
-        if (isWhite){
+        if (!isWhite && AudioManage.isShot){
             //停止视频辅助
             AudioManage.getInstance().endMedia();
             AudioManage.getInstance().showStopDialog();
