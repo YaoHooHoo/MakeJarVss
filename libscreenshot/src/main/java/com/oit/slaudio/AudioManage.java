@@ -3,8 +3,8 @@ package com.oit.slaudio;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
-import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
@@ -19,10 +19,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.view.View;
 
-import com.oit.libscreenshot.R;
 import com.oit.threadutils.OptData;
 import com.oit.threadutils.RunThreadManage;
 import com.oit.utils.AppManager;
@@ -61,9 +60,9 @@ public class AudioManage {
     private static int[] bitArray;//截取屏幕ARGB数组
     private static int[] bitArraySend;//发送屏幕ARGB数组
     private static long cutNum = 0;//屏幕刷新次数
-    private static boolean isShot = false;//是否在录屏中
+    public static boolean isShot = false;//是否在录屏中
     private static boolean canScreenShotSure = false;//是否可以录屏
-    private static boolean isNotifiDown = false;//通知栏是否下拉
+    private static boolean isNotifiDown = true;//通知栏是否下拉 true沒下拉，false下拉了
 
     private static RunThreadManage runThreadManage;//视频辅助开始结束线程
 
@@ -92,21 +91,23 @@ public class AudioManage {
 
     /**
      * 设置是否可以log写入文件
+     *
      * @param canWrite
      */
-    public static void isCanWriteLog(boolean canWrite){
+    public static void isCanWriteLog(boolean canWrite) {
         LogToFile.isCanWriteLog = canWrite;
     }
 
     /**
      * 设置模糊区域
+     *
      * @param x1 左上角横坐标
      * @param y1 左上角钟作彪
      * @param x2 右下角横坐标
      * @param y2 右下角横坐标
      */
-    public static void setVagueRegion(int x1, int y1, int x2, int y2){
-            setMaskArea(x1, y1, x2, y2);
+    public static void setVagueRegion(int x1, int y1, int x2, int y2) {
+        setMaskArea(x1, y1, x2, y2);
     }
 
     /**
@@ -216,7 +217,7 @@ public class AudioManage {
                     onJniEventCallBack.onJniCallBack(eventId);
                 }
                 Log.e(TAG, "eventId" + eventId);
-                if (eventId != 0){
+                if (eventId != 0) {
                     LogToFile.d(TAG, "audio manage eventId" + eventId);
                 }
                 if (0 == eventId && canShot()) {
@@ -238,10 +239,10 @@ public class AudioManage {
         setEventHandler(eventHandler);
 
         //注册pageUrl接收的广播
-        PageUrlReceiver receiver=new PageUrlReceiver();
-        IntentFilter intentFilter=new IntentFilter();
+        PageUrlReceiver receiver = new PageUrlReceiver();
+        IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("oit.PageUrlReceiver");
-        application.registerReceiver(receiver,intentFilter);
+        application.registerReceiver(receiver, intentFilter);
 
         runThreadManage = new RunThreadManage(1);
         runThreadManage.StartManageService();
@@ -545,33 +546,57 @@ public class AudioManage {
     /**
      * 设置停止弹窗
      */
-    public void setStopDialog(int layoutId, OnDialogViewHolder onDialogViewHolder){
+    public void setStopDialog(int layoutId, OnDialogViewHolder onDialogViewHolder) {
         this.layoutId = layoutId;
         this.onDialogViewHolder = onDialogViewHolder;
     }
 
-    public interface OnDialogViewHolder{
+    public interface OnDialogViewHolder {
         void onConvert(DialogViewHolder holder);
     }
 
     /**
      * 展示停止弹窗
      */
-    public boolean showStopDialog(){
-        if (layoutId == 0 || onDialogViewHolder == null) return false;
-        if (null != stopDialog) {
-            stopDialog.showDialog();
-            return true;
-        } else {
-            stopDialog = new CommonDialog(AppManager.getAppManager().currentActivity(), layoutId) {
-                @Override
-                public void convert(DialogViewHolder holder) {
-                    onDialogViewHolder.onConvert(holder);
-                }
-            };
-            stopDialog.showDialog();
-            return true;
+    public void showStopDialog() {
+        if (null != onJniEventCallBack){
+            onJniEventCallBack.onJniCallBack(2007);
+            LogToFile.e("PageUrlReceiver", "event 2007");
         }
+        if (layoutId == 0 || onDialogViewHolder == null) {
+            LogToFile.e("PageUrlReceiver", "showAlertDialog");
+            showAlertDialog();
+        } else {
+            LogToFile.e("PageUrlReceiver", "showCommonDialog");
+            if (null != stopDialog) {
+                stopDialog.showDialog();
+            } else {
+                stopDialog = new CommonDialog(AppManager.getAppManager().currentActivity(), layoutId) {
+                    @Override
+                    public void convert(DialogViewHolder holder) {
+                        onDialogViewHolder.onConvert(holder);
+                    }
+                };
+                stopDialog.showDialog();
+            }
+        }
+    }
+
+    /**
+     * 显示默认弹窗
+     */
+    public void showAlertDialog() {
+        // 创建构建器
+        AlertDialog.Builder builder = new AlertDialog.Builder(AppManager.getAppManager().currentActivity());
+        // 设置参数
+        builder.setMessage("已停止远程协助")
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {// 积极
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+        builder.create().show();
     }
 
     public static native boolean createAvtMedia(String lbsSvr, String mediaPath);
