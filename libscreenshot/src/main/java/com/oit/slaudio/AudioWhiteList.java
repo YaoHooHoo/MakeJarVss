@@ -7,12 +7,23 @@ public class AudioWhiteList {
 
     private static AudioWhiteList instance = null;
 
+    private boolean openWhiteList = false;
+
+    public void openWhiteList(boolean flag) {
+        openWhiteList = flag;
+    }
+
+    public boolean isOpenWhiteList(){
+        return openWhiteList;
+    }
+
+    //白名单列表
     private static String[] whiteStrs = {
-            "1",
-            "2",
-            "3",
-            "4",
-            "5"
+            "/xinyidai/pages/limitFinal.html",
+            "/xinyidai/pages/confirm.html",
+            "/xinyidai/pages/workInfo.html",
+            "/xinyidai/pages/familyInfo.html",
+            "/xinyidai/pages/linkInfo1.html"
     };
 
     private static List<String> whiteList = new ArrayList<>();
@@ -39,21 +50,22 @@ public class AudioWhiteList {
         return whiteList;
     }
 
-    public boolean isWhiteUrl(String pageUrl){
-        for (int i = 0; i < whiteList.size(); i++) {
-            if (pageUrl.equals(whiteList.get(i))){
-                return true;
-            }
-        }
-        return false;
+    public boolean isWhiteUrl(String pageUrl) {
+        return getInstance().getWhiteList().contains(pageUrl);
     }
 
     public void addWhiteItem(String whiteItem) {
         getInstance().getWhiteList().add(whiteItem);
     }
 
-    public void removeWhiteItem(String whiteItem){
-        if (getInstance().getWhiteList().contains(whiteItem)){
+    public void addWhiteList(List<String> whiteItem) {
+        for (int i = 0; i < whiteItem.size(); i++) {
+            getInstance().getWhiteList().add(whiteItem.get(i));
+        }
+    }
+
+    public void removeWhiteItem(String whiteItem) {
+        if (getInstance().getWhiteList().contains(whiteItem)) {
             getInstance().getWhiteList().remove(whiteItem);
         }
     }
