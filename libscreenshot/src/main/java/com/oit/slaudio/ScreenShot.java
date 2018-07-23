@@ -6,6 +6,9 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.view.View;
 
+import com.oit.utils.AppManager;
+import com.oit.utils.ScreenUtils;
+
 public class ScreenShot {
 
     private static int width;
