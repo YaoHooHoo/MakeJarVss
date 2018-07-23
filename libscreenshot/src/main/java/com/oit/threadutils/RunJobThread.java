@@ -3,7 +3,7 @@ package com.oit.threadutils;
 import android.util.Log;
 
 import com.oit.slaudio.AudioManage;
-import com.oit.slaudio.LogToFile;
+import com.oit.utils.LogToFile;
 
 import java.util.HashMap;
 import java.util.Map;
