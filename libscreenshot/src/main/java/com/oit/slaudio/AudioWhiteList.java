@@ -51,7 +51,14 @@ public class AudioWhiteList {
     }
 
     public boolean isWhiteUrl(String pageUrl) {
-        return getInstance().getWhiteList().contains(pageUrl);
+        if(pageUrl!=null &&  getInstance().getWhiteList().size()>0){
+            for(int i=0;i< getInstance().getWhiteList().size();i++){
+                if(pageUrl.contains( getInstance().getWhiteList().get(i))){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void addWhiteItem(String whiteItem) {
