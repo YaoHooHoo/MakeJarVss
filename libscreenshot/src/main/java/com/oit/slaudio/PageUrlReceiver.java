@@ -9,19 +9,20 @@ import com.oit.utils.LogToFile;
 
 public class PageUrlReceiver extends BroadcastReceiver {
 
-    public PageUrlReceiver(){
+    public PageUrlReceiver() {
 
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (!AudioWhiteList.getInstance().isOpenWhiteList()) return;
         String pageUrl = intent.getStringExtra("pageUrl");
         LogToFile.e("PageUrlReceiver", pageUrl);
         Log.e("PageUrlReceiver", pageUrl);
 
         boolean isWhite = AudioWhiteList.getInstance().isWhiteUrl(pageUrl);
         LogToFile.e("PageUrlReceiver-boolean", String.valueOf(isWhite));
-        if (!isWhite && AudioManage.isShot){
+        if (!isWhite && AudioManage.isShot) {
             //停止视频辅助
             AudioManage.getInstance().endMedia();
             AudioManage.getInstance().showStopDialog();
