@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
@@ -63,6 +64,8 @@ public class AudioManage {
     public static boolean isShot = false;//是否在录屏中
     private static boolean canScreenShotSure = false;//是否可以录屏
     private static boolean isNotifiDown = true;//通知栏是否下拉 true沒下拉，false下拉了
+    private static boolean isInit = false;//是否执行了init方法
+    public static boolean isFirstLifeListener = true;//是否是第一次开始监听生命周期
 
     private static RunThreadManage runThreadManage;//视频辅助开始结束线程
 
@@ -138,8 +141,16 @@ public class AudioManage {
      * 暂停远程协助
      */
     public static void pauseMedia(Activity activity, boolean isPause) {
-        if (activity == AppManager.getAppManager().currentActivity()) {
+        if (isFirstLifeListener){
             isNotifiDown = isPause;
+            Log.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
+            LogToFile.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
+        } else {
+            if (activity == AppManager.getAppManager().currentActivity()) {
+                isNotifiDown = isPause;
+                Log.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
+                LogToFile.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
+            }
         }
     }
 
@@ -157,6 +168,9 @@ public class AudioManage {
      */
     private static boolean canShot() {
         Log.e(TAG, "isShot" + "--" + String.valueOf(isShot) + "--canScreenShotSure--" + String.valueOf
+                (canScreenShotSure) + "--isBackFont--" + String.valueOf(MyLifecycleHandler.isBackFont) +
+                "--isNotifiDown--" + String.valueOf(isNotifiDown));
+        LogToFile.e(TAG, "isShot" + "--" + String.valueOf(isShot) + "--canScreenShotSure--" + String.valueOf
                 (canScreenShotSure) + "--isBackFont--" + String.valueOf(MyLifecycleHandler.isBackFont) +
                 "--isNotifiDown--" + String.valueOf(isNotifiDown));
         if (isShot) {
@@ -185,67 +199,70 @@ public class AudioManage {
      * @param lbsSvr      负载均衡服务器IP
      */
     public static void init(Application application, String lbsSvr) {
-        LogToFile.init();
-        LogToFile.d(TAG, "audio manage init start");
-        //监听前后台变化
-        application.registerActivityLifecycleCallbacks(new MyLifecycleHandler());
-        //初始化OitAVManage
-        savePath = FileUtils.getSDCardPath() + "/ScreenShot/Video";
-        FileUtils.createFile(savePath);
-        //域名解析，判断是否是IP
-        if (IpUtils.isIp(lbsSvr)) {
-            Log.e(TAG, "audio manage create Avt start");
-            //如果是IP格式直接访问
-            LogToFile.d(TAG, "audio manage create media start");
-            createAvtMedia(lbsSvr, savePath);
-        } else {
-            //如果是域名，解析成IP再访问
-            if (lbsSvr.contains(":")) {
-                String[] strs = lbsSvr.split(":");
-                lbsSvrStr = strs[0];
-                portNumber = strs[1];
+        if (!isInit) {
+            isInit = true;
+            LogToFile.init();
+            LogToFile.d(TAG, "audio manage init start");
+            //监听前后台变化
+            application.registerActivityLifecycleCallbacks(new MyLifecycleHandler());
+            //初始化OitAVManage
+            savePath = FileUtils.getSDCardPath() + "/ScreenShot/Video";
+            FileUtils.createFile(savePath);
+            //域名解析，判断是否是IP
+            if (IpUtils.isIp(lbsSvr)) {
+                Log.e(TAG, "audio manage create Avt start");
+                //如果是IP格式直接访问
+                LogToFile.d(TAG, "audio manage create media start");
+                createAvtMedia(lbsSvr, savePath);
             } else {
-                lbsSvrStr = lbsSvr;
+                //如果是域名，解析成IP再访问
+                if (lbsSvr.contains(":")) {
+                    String[] strs = lbsSvr.split(":");
+                    lbsSvrStr = strs[0];
+                    portNumber = strs[1];
+                } else {
+                    lbsSvrStr = lbsSvr;
+                }
+                new Thread(networkTask).start();
             }
-            new Thread(networkTask).start();
-        }
-        EventHandler eventHandler = EventHandler.getInstance();
-        eventHandler.setOnJniEventListener(new EventHandler.OnJniEventCallBack() {
-            @Override
-            public void onJniCode(int eventId) {
-                if (null != onJniEventCallBack) {
-                    onJniEventCallBack.onJniCallBack(eventId);
-                }
-                Log.e(TAG, "eventId" + eventId);
-                if (eventId != 0) {
-                    LogToFile.d(TAG, "audio manage eventId" + eventId);
-                }
-                if (0 == eventId && canShot()) {
-                    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                        Log.e(TAG, "start take shot < 5.0");
-                        ScreenShot.takeScreenShot();
-                    } else {
-                        Log.e(TAG, "start take shot > 5.0");
-                        startCapture();
+            EventHandler eventHandler = EventHandler.getInstance();
+            eventHandler.setOnJniEventListener(new EventHandler.OnJniEventCallBack() {
+                @Override
+                public void onJniCode(int eventId) {
+                    if (null != onJniEventCallBack) {
+                        onJniEventCallBack.onJniCallBack(eventId);
                     }
-                } else if (eventId == JniCode.JNI_SC_2007) {
-                    endMedia();
-                } else if (JniCode.isError(eventId)) {
-                    endMedia();
+                    Log.e(TAG, "eventId" + eventId);
+                    if (eventId != 0) {
+                        LogToFile.d(TAG, "audio manage eventId" + eventId);
+                    }
+                    if (0 == eventId && canShot()) {
+                        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                            Log.e(TAG, "start take shot < 5.0");
+                            ScreenShot.takeScreenShot();
+                        } else {
+                            Log.e(TAG, "start take shot > 5.0");
+                            startCapture();
+                        }
+                    } else if (eventId == JniCode.JNI_SC_2007) {
+                        endMedia();
+                    } else if (JniCode.isError(eventId)) {
+                        endMedia();
+                    }
                 }
-            }
-        });
-        Log.e(TAG, "audio manage set handler");
-        setEventHandler(eventHandler);
+            });
+            Log.e(TAG, "audio manage set handler");
+            setEventHandler(eventHandler);
 
-        //注册pageUrl接收的广播
-        PageUrlReceiver receiver = new PageUrlReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("oit.PageUrlReceiver");
-        application.registerReceiver(receiver, intentFilter);
+            //注册pageUrl接收的广播
+            PageUrlReceiver receiver = new PageUrlReceiver();
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction("oit.PageUrlReceiver");
+            LocalBroadcastManager.getInstance(application).registerReceiver(receiver, intentFilter);
 
-        runThreadManage = new RunThreadManage(1);
-        runThreadManage.StartManageService();
+            runThreadManage = new RunThreadManage(1);
+            runThreadManage.StartManageService();
+        }
     }
 
     /**
@@ -559,7 +576,7 @@ public class AudioManage {
      * 展示停止弹窗
      */
     public void showStopDialog() {
-        if (null != onJniEventCallBack){
+        if (null != onJniEventCallBack) {
             onJniEventCallBack.onJniCallBack(2007);
             LogToFile.e("PageUrlReceiver", "event 2007");
         }
