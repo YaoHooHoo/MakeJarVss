@@ -246,6 +246,8 @@ public class AudioManage {
                         }
                     } else if (eventId == JniCode.JNI_SC_2007) {
                         endMedia();
+                    } else if (eventId == JniCode.JNI_SC_2005){
+                        AudioManage.setVagueRegion(0, 0, 0, 0);
                     } else if (JniCode.isError(eventId)) {
                         endMedia();
                     }
@@ -483,6 +485,7 @@ public class AudioManage {
                                 bitmapCut.getPixels(bitArray, 0, bitmapCut.getWidth(), 0, 0, bitmapCut.getWidth(),
                                         bitmapCut.getHeight());
                                 bitArray.notify();
+                                LogToFile.e(TAG, "get screen bitmap success");
                             }
                         }
                     }
