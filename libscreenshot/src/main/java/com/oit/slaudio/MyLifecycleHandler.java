@@ -19,12 +19,12 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        if (AudioManage.isFirstLifeListener)AudioManage.isFirstLifeListener = false;
         Log.e("MyLifecycle----", "------1");
     }
 
     @Override
     public void onActivityStarted(Activity activity) {
+        if (AudioManage.isFirstLifeListener)AudioManage.isFirstLifeListener = false;
         AppManager.getAppManager().addActivity(activity);
         Log.e("MyLifecycle----", "------2");
         mFinalCount.put(activity.getLocalClassName(), TAG);
