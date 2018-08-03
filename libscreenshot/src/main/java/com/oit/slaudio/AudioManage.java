@@ -408,6 +408,8 @@ public class AudioManage {
     }
 
     public static void MediaDestory() {
+        isInit = false;
+
         Log.e(TAG, "media destroy endMedia");
         endMedia();
         Log.e(TAG, "media destroy destroyAvtMedia");
