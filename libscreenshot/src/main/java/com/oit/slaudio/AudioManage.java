@@ -141,7 +141,7 @@ public class AudioManage {
      * 暂停远程协助
      */
     public static void pauseMedia(Activity activity, boolean isPause) {
-        if (isFirstLifeListener){
+        if (isFirstLifeListener) {
             isNotifiDown = isPause;
             Log.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
             LogToFile.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
@@ -151,6 +151,19 @@ public class AudioManage {
                 Log.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
                 LogToFile.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
             }
+        }
+    }
+
+    /**
+     * 是否启用回音消除，默认为启动
+     *
+     * @param isSet
+     */
+    public static void setAudioProcess(boolean isSet) {
+        if (isSet) {
+            setAudioProcess(1);
+        } else {
+            setAudioProcess(0);
         }
     }
 
@@ -244,10 +257,10 @@ public class AudioManage {
                             Log.e(TAG, "start take shot > 5.0");
                             startCapture();
                         }
+                    } else if (eventId == JniCode.JNI_SC_2005) {
+                        AudioManage.setVagueRegion(0, 0, 0, 0);
                     } else if (eventId == JniCode.JNI_SC_2007) {
                         endMedia();
-                    } else if (eventId == JniCode.JNI_SC_2005){
-                        AudioManage.setVagueRegion(0, 0, 0, 0);
                     } else if (JniCode.isError(eventId)) {
                         endMedia();
                     }
@@ -645,4 +658,7 @@ public class AudioManage {
 
     //设置模糊区域
     public static native void setMaskArea(int x1, int y1, int x2, int y2);
+
+    //设置回音消除0=不使用音频处理1使用，默认为使用
+    public static native void setAudioProcess(int bAudioProcess);
 }
