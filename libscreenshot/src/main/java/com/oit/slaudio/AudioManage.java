@@ -38,6 +38,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Date;
 
 public class AudioManage {
 
@@ -61,6 +62,8 @@ public class AudioManage {
     private static int[] bitArray;//截取屏幕ARGB数组
     private static int[] bitArraySend;//发送屏幕ARGB数组
     private static long cutNum = 0;//屏幕刷新次数
+    private static long cutTimeFirst = 0;//上一帧时间
+    private static long cutTimeSecond = 0;//下一帧时间
     public static boolean isShot = false;//是否在录屏中
     private static boolean canScreenShotSure = false;//是否可以录屏
     private static boolean isNotifiDown = true;//通知栏是否下拉 true沒下拉，false下拉了
@@ -255,6 +258,7 @@ public class AudioManage {
                             ScreenShot.takeScreenShot();
                         } else {
                             Log.e(TAG, "start take shot > 5.0");
+
                             startCapture();
                         }
                     } else if (eventId == JniCode.JNI_SC_2005) {
@@ -453,6 +457,7 @@ public class AudioManage {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void setUpMediaProjection() {
         cutNum = 0;
+        cutTimeFirst = new Date().getTime();
         Intent mResultData = resultInfo.getIntent();
         int mResultCode = resultInfo.getResult();
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) mContext.getSystemService(Context
@@ -462,61 +467,113 @@ public class AudioManage {
         mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
-                Log.e(TAG, "onImageAvailable");
-                cutNum++;
-                Image image = null;
-                try {
-                    Log.d(TAG, "get preview image");
-                    image = reader.acquireLatestImage();
-                    if (cutNum % 15 != 1) {
-                        if (null != image) {
-                            image.close();
-                        }
-                        return;
-                    }
-                    Log.e(TAG, "start capture ----1");
-                    if (null == image) {
-                        return;
-                    }
-                    Log.e(TAG, "start capture ----2");
-                    int width = image.getWidth();
-                    int height = image.getHeight();
-                    final Image.Plane[] planes = image.getPlanes();
-                    final ByteBuffer buffer = planes[0].getBuffer();
-                    int pixelStride = planes[0].getPixelStride();
-                    int rowStride = planes[0].getRowStride();
-                    int rowPadding = rowStride - pixelStride * width;
-                    Log.e(TAG, "start capture ----3");
-                    Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config
-                            .ARGB_8888);
-                    bitmap.copyPixelsFromBuffer(buffer);
-                    Log.e(TAG, "start capture ----4");
-                    Bitmap bitmapCut = Bitmap.createBitmap(bitmap, 0, 0, mScreen_Width, mScreen_Height);
-                    if (null != bitArray) {
-                        synchronized (bitArray) {
-                            if (canShot()) {
-                                Log.e(TAG, "get bitmapCut size success");
-                                Log.e(TAG, String.valueOf(bitArray.length));
-                                bitmapCut.getPixels(bitArray, 0, bitmapCut.getWidth(), 0, 0, bitmapCut.getWidth(),
-                                        bitmapCut.getHeight());
-                                bitArray.notify();
-                                LogToFile.e(TAG, "get screen bitmap success");
-                            }
-                        }
-                    }
-                    bitmap.recycle();
-                    bitmapCut.recycle();
-                    Log.e(TAG, "start capture ----5");
-
-                } finally {
-                    if (null != image) {
-                        image.close();
-                    }
-                }
-
+                getReaderImgTimeCut(reader);
             }
         }, null);
         Log.i(TAG, "mMediaProjection defined");
+    }
+
+    /**
+     * 视频采集方案三
+     *
+     * @param reader
+     */
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    private static void getReaderImgTimeCut(ImageReader reader) {
+        cutNum++;
+        cutTimeSecond = new Date().getTime();
+        Image image = null;
+        try {
+            image = reader.acquireLatestImage();
+            Log.e(TAG, "cut-time" + "--" + (cutTimeSecond - cutTimeFirst));
+            if (cutNum != 1 && cutTimeSecond - cutTimeFirst < 200) {
+                if (null != image) {
+                    image.close();
+                }
+                return;
+            }
+            Log.e(TAG, "cut-time-ok" + "--" + (cutTimeSecond - cutTimeFirst));
+            cutTimeFirst = new Date().getTime();
+            if (null == image) {
+                return;
+            }
+            int width = image.getWidth();
+            int height = image.getHeight();
+            final Image.Plane[] planes = image.getPlanes();
+            final ByteBuffer buffer = planes[0].getBuffer();
+            int pixelStride = planes[0].getPixelStride();
+            int rowStride = planes[0].getRowStride();
+            int rowPadding = rowStride - pixelStride * width;
+            Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config
+                    .ARGB_8888);
+            bitmap.copyPixelsFromBuffer(buffer);
+            Bitmap bitmapCut = Bitmap.createBitmap(bitmap, 0, 0, mScreen_Width, mScreen_Height);
+            Log.e(TAG, "bitmap byte count" + String.valueOf(bitmapCut.getByteCount()));
+            if (null != bitArray) {
+                synchronized (bitArray) {
+                    if (canShot()) {
+                        Log.e(TAG, "get bitmapCut size success");
+                        Log.e(TAG, String.valueOf(bitArray.length));
+                        bitmapCut.getPixels(bitArray, 0, bitmapCut.getWidth(), 0, 0, bitmapCut.getWidth(),
+                                bitmapCut.getHeight());
+                        bitArray.notify();
+                        LogToFile.e(TAG, "get screen bitmap success");
+                    }
+                }
+            }
+            bitmap.recycle();
+            bitmapCut.recycle();
+        } finally {
+            if (null != image) {
+                image.close();
+            }
+        }
+    }
+
+    /**
+     * 视频采集方案一
+     */
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    private static void getReaderImg(ImageReader reader) {
+        Log.e(TAG, "onImageAvailable");
+        Image image = null;
+        try {
+            Log.d(TAG, "get preview image");
+            image = reader.acquireLatestImage();
+            if (null == image) {
+                return;
+            }
+            int width = image.getWidth();
+            int height = image.getHeight();
+            final Image.Plane[] planes = image.getPlanes();
+            final ByteBuffer buffer = planes[0].getBuffer();
+            int pixelStride = planes[0].getPixelStride();
+            int rowStride = planes[0].getRowStride();
+            int rowPadding = rowStride - pixelStride * width;
+            Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config
+                    .ARGB_8888);
+            bitmap.copyPixelsFromBuffer(buffer);
+            Bitmap bitmapCut = Bitmap.createBitmap(bitmap, 0, 0, mScreen_Width, mScreen_Height);
+            LogToFile.e(TAG, "bitmap byte count" + String.valueOf(bitmapCut.getByteCount()));
+            if (null != bitArray) {
+                synchronized (bitArray) {
+                    if (canShot()) {
+                        Log.e(TAG, "get bitmapCut size success");
+                        Log.e(TAG, String.valueOf(bitArray.length));
+                        bitmapCut.getPixels(bitArray, 0, bitmapCut.getWidth(), 0, 0, bitmapCut.getWidth(),
+                                bitmapCut.getHeight());
+                        bitArray.notify();
+                        LogToFile.e(TAG, "get screen bitmap success");
+                    }
+                }
+            }
+            bitmap.recycle();
+            bitmapCut.recycle();
+        } finally {
+            if (null != image) {
+                image.close();
+            }
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
