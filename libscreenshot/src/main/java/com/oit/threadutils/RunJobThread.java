@@ -70,8 +70,9 @@ public class RunJobThread extends com.oit.threadutils.ServiceThread {
     //开始视频辅助
     private boolean CreateUserOrder(final OptData jobData) {
         LogToFile.d(TAG, "audio manage start media function--3--");
+        LogToFile.d(TAG, "codecx-codecy-screenWidth-screenHeight" + "480-640-" + jobData.screenWidth + "-" + jobData.screenHeight);
         AudioManage.setBusinessType(jobData.nType, jobData.extValue);
-        AudioManage.startAvtMedia(640, 480, jobData.screenWidth, jobData.screenHeight, jobData.jobNum, jobData.mobile);
+        AudioManage.startAvtMedia(480, 640, jobData.screenWidth, jobData.screenHeight, jobData.jobNum, jobData.mobile);
         return true;
     }
 
