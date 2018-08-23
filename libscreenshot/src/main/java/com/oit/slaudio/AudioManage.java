@@ -678,17 +678,22 @@ public class AudioManage {
      * 显示默认弹窗
      */
     public void showAlertDialog() {
-        // 创建构建器
-        AlertDialog.Builder builder = new AlertDialog.Builder(AppManager.getAppManager().currentActivity());
-        // 设置参数
-        builder.setMessage("已停止远程协助")
-                .setPositiveButton("确定", new DialogInterface.OnClickListener() {// 积极
+        if (AppManager.getAppManager().currentActivity() == null) return;
+        try {
+            // 创建构建器
+            AlertDialog.Builder builder = new AlertDialog.Builder(AppManager.getAppManager().currentActivity());
+            // 设置参数
+            builder.setMessage("已停止远程协助")
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {// 积极
 
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                    }
-                });
-        builder.create().show();
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    });
+            builder.create().show();
+        } catch (Exception e) {
+
+        }
     }
 
     public static native boolean createAvtMedia(String lbsSvr, String mediaPath);
