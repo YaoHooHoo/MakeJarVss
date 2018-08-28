@@ -295,36 +295,21 @@ public class AudioManage {
                 Message msg = new Message();
                 Bundle data = new Bundle();
                 Log.e(TAG, "get internet address port --- 1");
+                String val = InetAddress.getByName(lbsSvrStr).getHostAddress();
                 data.putString("value", InetAddress.getByName(lbsSvrStr).getHostAddress());
                 data.putString("portNumber", portNumber);
                 data.putString("savePath", savePath);
                 msg.setData(data);
                 Log.e(TAG, "get internet address port --- 2");
-                IpsHandler handler = new IpsHandler();
-                handler.sendMessage(msg);
-            } catch (UnknownHostException e) {
+                Log.e(TAG, "address port---"+val);
+                createAvtMedia(val + ":" + portNumber, savePath);
+            } catch (Exception e) {
+                isInit = false;
                 e.printStackTrace();
                 Log.e(TAG, "解析域名失败");
             }
         }
     };
-
-    /**
-     * 域名解析后初始化函数
-     */
-    private static class IpsHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            Log.e(TAG, "get internet address port --- 3");
-            Bundle data = msg.getData();
-            String val = data.getString("value");
-            String portNumber = data.getString("portNumber");
-            String savePath = data.getString("savePath");
-            LogToFile.d(TAG, "audio manage create media start");
-            createAvtMedia(val + ":" + portNumber, savePath);
-        }
-    }
 
     /**
      * 5.0以上开始录屏
