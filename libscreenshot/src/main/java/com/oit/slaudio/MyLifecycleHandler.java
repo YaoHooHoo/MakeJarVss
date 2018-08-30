@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class MyLifecycleHandler implements Application.ActivityLifecycleCallbacks {
 
-    private Map<String, Object> mFinalCount = new HashMap<>();
+    public static int activitySize = 1;
     public static boolean isBackFont = true;
     private String TAG = "MyLifecycleHandler";
 
@@ -27,13 +27,15 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
         if (AudioManage.isFirstLifeListener)AudioManage.isFirstLifeListener = false;
         AppManager.getAppManager().addActivity(activity);
         Log.e("MyLifecycle----", "------2");
-        mFinalCount.put(activity.getLocalClassName(), TAG);
-        if (mFinalCount.size() > 0) {
+        activitySize ++;
+        if(activitySize>=1){
             isBackFont = true;
+        } else {
+            isBackFont = false;
         }
         Log.e("MyLifecycleHandler-bool", "" + isBackFont);
-        LogToFile.e("MyLifecycleHandler-bool", "" + isBackFont);
-        Log.e("MyLifecycleHandler-star", "" + mFinalCount.size());
+        LogToFile.e("MyLifecycleHandler-bool-start", "" + isBackFont);
+        Log.e("MyLifecycleHandler-star", "" + activitySize);
     }
 
     @Override
@@ -50,13 +52,15 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
     public void onActivityStopped(Activity activity) {
         AppManager.getAppManager().removeActivity(activity);
         Log.e("MyLifecycle----", "------5");
-        mFinalCount.remove(activity.getLocalClassName());
-        if (mFinalCount.size() == 0) {
+        activitySize --;
+        if(activitySize>=1){
+            isBackFont = true;
+        } else {
             isBackFont = false;
         }
         Log.e("MyLifecycleHandler-bool", "" + isBackFont);
-        LogToFile.e("MyLifecycleHandler-bool", "" + isBackFont);
-        Log.e("MyLifecycleHandler-stop", "" + mFinalCount.size());
+        LogToFile.e("MyLifecycleHandler-bool-stop", "" + isBackFont);
+        Log.e("MyLifecycleHandler-stop", "" + activitySize);
     }
 
     @Override

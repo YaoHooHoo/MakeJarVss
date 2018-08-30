@@ -215,12 +215,12 @@ public class AudioManage {
      * @param lbsSvr      负载均衡服务器IP
      */
     public static void init(Application application, String lbsSvr) {
+        //监听前后台变化
+        application.registerActivityLifecycleCallbacks(new MyLifecycleHandler());
         if (!isInit) {
             isInit = true;
             LogToFile.init();
             LogToFile.d(TAG, "audio manage init start");
-            //监听前后台变化
-            application.registerActivityLifecycleCallbacks(new MyLifecycleHandler());
             //初始化OitAVManage
             savePath = FileUtils.getSDCardPath() + "/ScreenShot/Video";
             FileUtils.createFile(savePath);
@@ -334,6 +334,7 @@ public class AudioManage {
         if (!isShot) {
             this.mContext = context;
             isShot = true;
+            MyLifecycleHandler.activitySize = 1;//activity生命周期计数归1
             setScreenInfo(context);
             Log.e(TAG, "start media function");
             LogToFile.d(TAG, "audio manage start media function--2--");
