@@ -20,12 +20,12 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
         Log.e("MyLifecycle----", "------1");
+        AppManager.getAppManager().addActivity(activity);
     }
 
     @Override
     public void onActivityStarted(Activity activity) {
         if (AudioManage.isFirstLifeListener)AudioManage.isFirstLifeListener = false;
-        AppManager.getAppManager().addActivity(activity);
         Log.e("MyLifecycle----", "------2");
         activitySize ++;
         if(activitySize>=1){
@@ -50,7 +50,6 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
 
     @Override
     public void onActivityStopped(Activity activity) {
-        AppManager.getAppManager().removeActivity(activity);
         Log.e("MyLifecycle----", "------5");
         activitySize --;
         if(activitySize>=1){
@@ -66,6 +65,7 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
     @Override
     public void onActivityDestroyed(Activity activity) {
         Log.e("MyLifecycle----", "------6");
+        AppManager.getAppManager().removeActivity(activity);
     }
 
     @Override
