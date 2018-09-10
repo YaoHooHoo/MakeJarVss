@@ -17,7 +17,6 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
@@ -26,6 +25,7 @@ import android.util.Log;
 import com.oit.threadutils.OptData;
 import com.oit.threadutils.RunThreadManage;
 import com.oit.utils.AppManager;
+import com.oit.utils.AppManagerBack;
 import com.oit.utils.CommonDialog;
 import com.oit.utils.CopyFileUtils;
 import com.oit.utils.DialogViewHolder;
@@ -36,7 +36,6 @@ import com.oit.utils.ScreenUtils;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Date;
 
@@ -69,6 +68,7 @@ public class AudioManage {
     private static boolean isNotifiDown = true;//通知栏是否下拉 true沒下拉，false下拉了
     private static boolean isInit = false;//是否执行了init方法
     public static boolean isFirstLifeListener = true;//是否是第一次开始监听生命周期
+    public static Activity firstActivity;//加载so的第一个activity
 
     private static RunThreadManage runThreadManage;//视频辅助开始结束线程
 
@@ -120,24 +120,32 @@ public class AudioManage {
      * 动态加载so
      */
     public static void loadSo(Context context) {
-        File dir = context.getDir("libs", Activity.MODE_PRIVATE);
-        Log.e("TAG", dir.getAbsolutePath());
-        File distFile = new File(dir.getAbsolutePath() + File.separator + "libOitAVManage.so");
+        //监听前后台变化
+        try {
+            firstActivity = (Activity)context;
+            firstActivity.getApplication().registerActivityLifecycleCallbacks(new MyLifecycleHandler());
+            File dir = context.getDir("libs", Activity.MODE_PRIVATE);
+            Log.e("TAG", dir.getAbsolutePath());
+            File distFile = new File(dir.getAbsolutePath() + File.separator + "libOitAVManage.so");
 
-        if (CopyFileUtils.copyFileFromAssets(context, "libOitAVManage.so", distFile.getAbsolutePath())) {
-            //使用load方法加载内部储存的SO库
-            System.load(distFile.getAbsolutePath());
-            Log.e(TAG, "copyFileFromAssets success");
-        } else {
-            Log.e(TAG, "copyFileFromAssets failed");
+            if (CopyFileUtils.copyFileFromAssets(context, "libOitAVManage.so", distFile.getAbsolutePath())) {
+                //使用load方法加载内部储存的SO库
+                System.load(distFile.getAbsolutePath());
+                Log.e(TAG, "copyFileFromAssets success");
+            } else {
+                Log.e(TAG, "copyFileFromAssets failed");
+            }
+        } catch (Exception e) {
+
         }
     }
 
     /**
      * 静态加载so
      */
-    public static void loadSo() {
+    public static void loadSo(Application application) {
         System.loadLibrary("OitAVManage");
+        application.registerActivityLifecycleCallbacks(new MyLifecycleHandler());
     }
 
     /**
@@ -147,12 +155,12 @@ public class AudioManage {
         if (isFirstLifeListener) {
             isNotifiDown = isPause;
             Log.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
-            LogToFile.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
+            LogToFile.e(TAG, "isNotifiDown--1" + String.valueOf(isNotifiDown));
         } else {
-            if (activity == AppManager.getAppManager().currentActivity()) {
+            if (activity == AppManagerBack.getAppManager().currentActivity()) {
                 isNotifiDown = isPause;
                 Log.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
-                LogToFile.e(TAG, "isNotifiDown--" + String.valueOf(isNotifiDown));
+                LogToFile.e(TAG, "isNotifiDown--2" + String.valueOf(isNotifiDown));
             }
         }
     }
@@ -216,7 +224,6 @@ public class AudioManage {
      */
     public static void init(Application application, String lbsSvr) {
         //监听前后台变化
-        application.registerActivityLifecycleCallbacks(new MyLifecycleHandler());
         if (!isInit) {
             isInit = true;
             LogToFile.init();
@@ -301,7 +308,7 @@ public class AudioManage {
                 data.putString("savePath", savePath);
                 msg.setData(data);
                 Log.e(TAG, "get internet address port --- 2");
-                Log.e(TAG, "address port---"+val);
+                Log.e(TAG, "address port---" + val);
                 createAvtMedia(val + ":" + portNumber, savePath);
             } catch (Exception e) {
                 isInit = false;

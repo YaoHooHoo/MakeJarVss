@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.oit.utils.AppManager;
+import com.oit.utils.AppManagerBack;
 import com.oit.utils.LogToFile;
 
 import java.util.HashMap;
@@ -27,6 +28,7 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
     public void onActivityStarted(Activity activity) {
         if (AudioManage.isFirstLifeListener)AudioManage.isFirstLifeListener = false;
         Log.e("MyLifecycle----", "------2");
+        AppManagerBack.getAppManager().addActivity(activity);
         activitySize ++;
         if(activitySize>=1){
             isBackFont = true;
@@ -51,6 +53,7 @@ public class MyLifecycleHandler implements Application.ActivityLifecycleCallback
     @Override
     public void onActivityStopped(Activity activity) {
         Log.e("MyLifecycle----", "------5");
+        AppManagerBack.getAppManager().removeActivity(activity);
         activitySize --;
         if(activitySize>=1){
             isBackFont = true;

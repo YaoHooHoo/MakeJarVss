@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.util.Log;
 import android.view.View;
 
 import com.oit.utils.AppManager;
+import com.oit.utils.LogToFile;
 import com.oit.utils.ScreenUtils;
 
 public class ScreenShot {
@@ -20,19 +22,22 @@ public class ScreenShot {
 
     public static void takeScreenShot() {
         Activity currentActivity = AppManager.getAppManager().currentActivity();
-        if (currentActivity != lastActivity) {
+        if (currentActivity == null && AudioManage.firstActivity != null){
+            lastActivity = AudioManage.firstActivity;
+        } else if (currentActivity != lastActivity) {
             lastActivity = currentActivity;
         }
         if (null == lastActivity) return;
+        LogToFile.e("AudioManage", lastActivity.getLocalClassName());
         lastActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 View view = lastActivity.getWindow().getDecorView();
                 view.buildDrawingCache();
                 shotActivityNoStatusBar(lastActivity);
+                AudioManage.screenCapImage(bitArray, width, height);
             }
         });
-        AudioManage.screenCapImage(bitArray, width, height);
     }
 
     public static void initImageData(Context activity) {
